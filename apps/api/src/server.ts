@@ -19,6 +19,14 @@ const upload = multer({ dest: uploadsRoot() });
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({
+    service: "fly-ticket-api",
+    status: "ok",
+    health: "/health",
+  });
+});
+
 app.post("/admin/events", async (req, res) => {
   const parsed = eventInputSchema.safeParse(req.body);
   if (!parsed.success) {

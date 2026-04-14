@@ -142,7 +142,7 @@ export default function AdminPage() {
 
   return (
     <main>
-      <h1>Ticket Operator Admin MVP</h1>
+      <h1 className="title">Ticket Operator Admin MVP</h1>
 
       <section className="card">
         <h2>1. Створити/редагувати подію</h2>
@@ -213,7 +213,7 @@ export default function AdminPage() {
         </svg>
       </section>
 
-      {message && <p>{message}</p>}
+      {message && <p className="status">{message}</p>}
     </main>
   );
 }
