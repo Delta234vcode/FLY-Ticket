@@ -1,0 +1,16 @@
+{
+  "name": "ticket-operator-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/api",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:admin": "npm run dev -w apps/admin",
+    "build": "npm run build -ws",
+    "lint": "npm run lint -ws"
+  }
+}
