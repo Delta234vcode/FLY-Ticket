@@ -11,6 +11,7 @@
     "dev:api": "npm run dev -w apps/api",
     "dev:admin": "npm run dev -w apps/admin",
     "build": "npm run build -ws",
-    "lint": "npm run lint -ws"
+    "lint": "npm run lint -ws",
+    "start": "npm run start -w apps/api"
   }
 }
