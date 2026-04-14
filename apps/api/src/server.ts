@@ -149,7 +149,9 @@ app.post("/admin/events/:id/seats/import-from-svg", async (req, res) => {
 
   const parsedSeats = parseSvgSeats(svg);
   if (!parsedSeats.length) {
-    return res.status(400).json({ error: "No seats found in svg circles" });
+    return res.status(400).json({
+      error: "No seats found in SVG. Ensure the layout contains <circle> or <ellipse> seat nodes with cx/cy.",
+    });
   }
 
   const duplicated = new Set<string>();

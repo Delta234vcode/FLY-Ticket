@@ -80,7 +80,8 @@ export default function AdminPage() {
     });
 
     if (!uploadResponse.ok) {
-      setMessage("Помилка завантаження SVG");
+      const payload = await uploadResponse.json().catch(() => null);
+      setMessage(payload?.error ?? "Помилка завантаження SVG");
       return;
     }
 
@@ -89,7 +90,8 @@ export default function AdminPage() {
     });
 
     if (!importResponse.ok) {
-      setMessage("Помилка імпорту місць з SVG");
+      const payload = await importResponse.json().catch(() => null);
+      setMessage(payload?.error ?? "Помилка імпорту місць з SVG");
       return;
     }
 
