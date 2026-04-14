@@ -6,9 +6,9 @@ import path from "node:path";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { eventInputSchema, seatPricingSchema } from "@ticket/shared";
-import { prisma } from "./prisma";
-import { parseSvgSeats } from "./svg-parser";
-import { ensureUploadDir, uploadsRoot } from "./storage";
+import { prisma } from "./prisma.js";
+import { parseSvgSeats } from "./svg-parser.js";
+import { ensureUploadDir, uploadsRoot } from "./storage.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
