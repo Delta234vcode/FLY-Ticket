@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Venue {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  title         String
+  startsAt      DateTime
+  status        EventStatus @default(draft)
+  venueId       String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  venue         Venue       @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  layouts       EventLayout[]
+  sectors       Sector[]
+  seats         Seat[]
+  priceTiers    PriceTier[]
+  pricingLogs   PricingLog[]
+}
+
+model EventLayout {
+  id         String   @id @default(cuid())
+  eventId    String
+  filePath   String
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Sector {
+  id        String   @id @default(cuid())
+  eventId   String
+  code      String
+  name      String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  seats     Seat[]
+
+  @@unique([eventId, code])
+}
+
+model Seat {
+  id          String   @id @default(cuid())
+  eventId     String
+  sectorId    String?
+  seatLabel   String
+  rowLabel    String?
+  externalId  String
+  x           Float
+  y           Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sector      Sector?  @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  seatPrices  SeatPrice[]
+
+  @@unique([eventId, externalId])
+}
+
+model PriceTier {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prices    SeatPrice[]
+
+  @@unique([eventId, name])
+}
+
+model SeatPrice {
+  id          String   @id @default(cuid())
+  seatId      String
+  priceTierId String
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("AMD")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  seat        Seat     @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  priceTier   PriceTier @relation(fields: [priceTierId], references: [id], onDelete: Cascade)
+
+  @@unique([seatId])
+}
+
+model PricingLog {
+  id         String   @id @default(cuid())
+  eventId    String
+  actorEmail String
+  action     String
+  payload    Json
+  createdAt  DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+enum EventStatus {
+  draft
+  published
+}

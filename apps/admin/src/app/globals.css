@@ -1,0 +1,65 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f3f5f8;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+input, button, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d9dee8;
+}
+
+button {
+  cursor: pointer;
+  background: #0a84ff;
+  color: white;
+  border: none;
+}
+
+svg {
+  border: 1px solid #d9dee8;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.seat {
+  fill: #d0d6de;
+  cursor: pointer;
+}
+
+.seat.selected {
+  fill: #1e9cff;
+}
+
+.seat.priced {
+  fill: #7a5cff;
+}
+
+.seat.selected.priced {
+  fill: #10b981;
+}
