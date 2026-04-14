@@ -18,24 +18,51 @@ function attributes(rawTag: string) {
   return attrs;
 }
 
+function parseTranslate(transform: string | undefined) {
+  if (!transform) return null;
+  const match = transform.match(/translate\(\s*([-\d.]+)[,\s]+([-\d.]+)\s*\)/i);
+  if (!match) return null;
+  return { x: Number(match[1]), y: Number(match[2]) };
+}
+
 export function parseSvgSeats(svg: string): ParsedSeat[] {
-  const seatTags = [
-    ...(svg.match(/<circle\b[^>]*>/gi) ?? []),
-    ...(svg.match(/<ellipse\b[^>]*>/gi) ?? []),
-  ];
+  const seatTags = svg.match(/<([a-zA-Z][\w:-]*)\b[^>]*>/g) ?? [];
 
   return seatTags
     .map((tag, index): ParsedSeat | null => {
       const attrs = attributes(tag);
-      // Many editors export single-quoted attrs or uppercase tags.
-      const cx = Number(attrs.cx ?? attrs.CX ?? "0");
-      const cy = Number(attrs.cy ?? attrs.CY ?? "0");
-      const id = attrs.id ?? attrs.ID ?? `seat-${index + 1}`;
-      const row: string | null = attrs["data-row"] ?? null;
-      const label = attrs["data-seat"] ?? `${index + 1}`;
-      const sector = attrs["data-sector"] ?? "default";
+      const tagName = (tag.match(/^<([a-zA-Z][\w:-]*)/)?.[1] ?? "").toLowerCase();
+      const translate = parseTranslate(attrs.transform);
 
-      if (!Number.isFinite(cx) || !Number.isFinite(cy)) {
+      // Many editors export seats as circle/ellipse/rect/use with mixed-case attrs.
+      let xRaw = attrs.cx ?? attrs.CX ?? attrs.x ?? attrs.X;
+      let yRaw = attrs.cy ?? attrs.CY ?? attrs.y ?? attrs.Y;
+
+      if ((tagName === "rect" || tagName === "use") && xRaw && yRaw) {
+        const width = Number(attrs.width ?? attrs.WIDTH ?? "0");
+        const height = Number(attrs.height ?? attrs.HEIGHT ?? "0");
+        xRaw = String(Number(xRaw) + (Number.isFinite(width) ? width / 2 : 0));
+        yRaw = String(Number(yRaw) + (Number.isFinite(height) ? height / 2 : 0));
+      }
+
+      if ((!xRaw || !yRaw) && translate) {
+        xRaw = String(translate.x);
+        yRaw = String(translate.y);
+      }
+
+      const cx = Number(xRaw ?? "0");
+      const cy = Number(yRaw ?? "0");
+      const id = attrs.id ?? attrs.ID ?? `seat-${index + 1}`;
+      const row: string | null = attrs["data-row"] ?? attrs["data-ryad"] ?? null;
+      const label = attrs["data-seat"] ?? attrs["data-place"] ?? attrs["seat"] ?? `${index + 1}`;
+      const sector = attrs["data-sector"] ?? "default";
+      const className = (attrs.class ?? attrs.CLASS ?? "").toLowerCase();
+      const looksLikeSeat =
+        ["circle", "ellipse", "rect", "use"].includes(tagName) ||
+        className.includes("seat") ||
+        Boolean(attrs["data-seat"] ?? attrs["data-place"] ?? attrs["seat"]);
+
+      if (!looksLikeSeat || !Number.isFinite(cx) || !Number.isFinite(cy)) {
         return null;
       }
 
