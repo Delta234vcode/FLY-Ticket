@@ -1,0 +1,13 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm run start -w apps/api"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[variables]
+NPM_CONFIG_PRODUCTION = "false"
+NPM_CONFIG_INCLUDE = "dev"
+NIXPACKS_INSTALL_CMD = "npm install --include=dev"
+NIXPACKS_BUILD_CMD = "npm run build -w packages/shared && npm run build -w apps/api"
