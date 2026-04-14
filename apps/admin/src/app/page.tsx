@@ -9,7 +9,7 @@ type Seat = {
   externalId: string;
   x: number;
   y: number;
-  seatPrices: { amount: string; currency: string }[];
+  seatPrices: { amount: string; currency: string; priceTier?: { name: string } }[];
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -24,11 +24,32 @@ export default function AdminPage() {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [tierName, setTierName] = useState("Standard");
+  const [tierColor, setTierColor] = useState("#1f8dff");
   const [price, setPrice] = useState("5000");
   const [message, setMessage] = useState("");
 
-  const pricedIds = useMemo(
-    () => new Set(seats.filter((seat) => seat.seatPrices.length > 0).map((seat) => seat.externalId)),
+  function encodeTier(name: string, color: string) {
+    return `${name}__${color.toLowerCase()}`;
+  }
+
+  function decodeTierColor(rawName: string | undefined) {
+    if (!rawName) return null;
+    const parts = rawName.split("__");
+    const maybeColor = parts.at(-1) ?? "";
+    if (/^#[0-9a-f]{6}$/i.test(maybeColor)) return maybeColor;
+    return null;
+  }
+
+  const pricedColors = useMemo(
+    () =>
+      new Map(
+        seats
+          .filter((seat) => seat.seatPrices.length > 0)
+          .map((seat) => [
+            seat.externalId,
+            decodeTierColor(seat.seatPrices[0].priceTier?.name) ?? "#0b72e1",
+          ]),
+      ),
     [seats],
   );
 
@@ -141,7 +162,7 @@ export default function AdminPage() {
             seatIds: selectedSeats,
             amount: Number(price),
             currency: "AMD",
-            tierName,
+            tierName: encodeTier(tierName, tierColor),
           },
         ],
       }),
@@ -215,6 +236,12 @@ export default function AdminPage() {
         <h2>3. Розцінка місць</h2>
         <div className="grid">
           <input value={tierName} onChange={(e) => setTierName(e.target.value)} placeholder="Тариф" />
+          <input
+            value={tierColor}
+            onChange={(e) => setTierColor(e.target.value)}
+            type="color"
+            title="Колір тарифу"
+          />
           <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={1} />
           <button type="button" onClick={applyPricing} disabled={!selectedSeats.length}>
             Застосувати до {selectedSeats.length} місць
@@ -224,8 +251,8 @@ export default function AdminPage() {
         <svg width="1000" height="520" viewBox="0 0 1000 520">
           {seats.map((seat) => {
             const selected = selectedSeats.includes(seat.externalId);
-            const priced = pricedIds.has(seat.externalId);
-            const cssClass = `seat ${selected ? "selected" : ""} ${priced ? "priced" : ""}`;
+            const pricedColor = pricedColors.get(seat.externalId);
+            const cssClass = `seat ${selected ? "selected" : ""} ${pricedColor ? "priced" : ""}`;
             const priceHint = seat.seatPrices.length
               ? `${seat.seatPrices[0].amount} ${seat.seatPrices[0].currency}`
               : "Без ціни";
@@ -237,6 +264,7 @@ export default function AdminPage() {
                 cx={seat.x}
                 cy={seat.y}
                 r={6}
+                style={pricedColor ? { fill: pricedColor } : undefined}
                 onClick={() => toggleSeat(seat.externalId)}
               >
                 <title>{`${seat.externalId} | ${priceHint}`}</title>
