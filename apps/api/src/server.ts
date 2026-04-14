@@ -9,12 +9,14 @@ import { eventInputSchema, seatPricingSchema } from "@ticket/shared";
 import { prisma } from "./prisma.js";
 import { parseSvgSeats } from "./svg-parser.js";
 import { ensureUploadDir, uploadsRoot } from "./storage.js";
+import { parseSeatsFromXlsx } from "./xlsx-parser.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
 
 ensureUploadDir();
 const upload = multer({ dest: uploadsRoot() });
+const uploadXlsx = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json());
@@ -196,6 +198,99 @@ app.post("/admin/events/:id/seats/import-from-svg", async (req, res) => {
           externalId: seat.externalId,
           x: seat.x,
           y: seat.y,
+        },
+      });
+    }
+  });
+
+  return res.json({ imported: parsedSeats.length });
+});
+
+app.post("/admin/events/:id/seats/import-from-xlsx", uploadXlsx.single("sheet"), async (req, res) => {
+  const eventId = req.params.id;
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) {
+    return res.status(404).json({ error: "Event not found" });
+  }
+
+  if (!req.file?.buffer) {
+    return res.status(400).json({ error: "XLSX file is required" });
+  }
+
+  const parsedSeats = parseSeatsFromXlsx(req.file.buffer);
+  if (!parsedSeats.length) {
+    return res.status(400).json({
+      error:
+        "No seats found in XLSX. Expected columns like sector/row/seat (and optional price/currency/tier,x,y).",
+    });
+  }
+
+  const duplicated = new Set<string>();
+  const seen = new Set<string>();
+  for (const seat of parsedSeats) {
+    if (seen.has(seat.externalId)) duplicated.add(seat.externalId);
+    seen.add(seat.externalId);
+  }
+
+  if (duplicated.size > 0) {
+    return res.status(400).json({
+      error: "Duplicated seat ids found in XLSX",
+      duplicates: Array.from(duplicated),
+    });
+  }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await tx.seatPrice.deleteMany({ where: { seat: { eventId } } });
+    await tx.seat.deleteMany({ where: { eventId } });
+    await tx.sector.deleteMany({ where: { eventId } });
+    await tx.priceTier.deleteMany({ where: { eventId } });
+
+    const sectorMap = new Map<string, string>();
+    const seatByExternalId = new Map<string, string>();
+
+    for (const seat of parsedSeats) {
+      if (!sectorMap.has(seat.sectorCode)) {
+        const createdSector = await tx.sector.create({
+          data: {
+            eventId,
+            code: seat.sectorCode,
+            name: seat.sectorCode,
+          },
+        });
+        sectorMap.set(seat.sectorCode, createdSector.id);
+      }
+
+      const createdSeat = await tx.seat.create({
+        data: {
+          eventId,
+          sectorId: sectorMap.get(seat.sectorCode)!,
+          seatLabel: seat.seatLabel,
+          rowLabel: seat.rowLabel,
+          externalId: seat.externalId,
+          x: seat.x,
+          y: seat.y,
+        },
+      });
+      seatByExternalId.set(seat.externalId, createdSeat.id);
+    }
+
+    const tierCache = new Map<string, string>();
+    for (const seat of parsedSeats) {
+      if (!seat.amount || !seatByExternalId.has(seat.externalId)) continue;
+      const tierName = seat.tierName ?? "Imported";
+      if (!tierCache.has(tierName)) {
+        const tier = await tx.priceTier.create({
+          data: { eventId, name: tierName },
+        });
+        tierCache.set(tierName, tier.id);
+      }
+
+      await tx.seatPrice.create({
+        data: {
+          seatId: seatByExternalId.get(seat.externalId)!,
+          priceTierId: tierCache.get(tierName)!,
+          amount: seat.amount,
+          currency: (seat.currency ?? "AMD").toUpperCase(),
         },
       });
     }

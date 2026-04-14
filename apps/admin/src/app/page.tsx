@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [venueName, setVenueName] = useState("Sport Concert Complex");
   const [startsAt, setStartsAt] = useState("2026-04-23T20:00");
   const [svgFile, setSvgFile] = useState<File | null>(null);
+  const [xlsxFile, setXlsxFile] = useState<File | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [tierName, setTierName] = useState("Standard");
@@ -107,6 +108,26 @@ export default function AdminPage() {
     setSeats(payload.seats);
   }
 
+  async function importXlsx() {
+    if (!eventId || !xlsxFile) return;
+    const form = new FormData();
+    form.append("sheet", xlsxFile);
+
+    const response = await fetch(`${API_URL}/admin/events/${eventId}/seats/import-from-xlsx`, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      setMessage(payload?.error ?? "Помилка імпорту місць з XLSX");
+      return;
+    }
+
+    await refreshSeats();
+    setMessage("XLSX імпортовано");
+  }
+
   async function applyPricing() {
     if (!eventId || !selectedSeats.length) return;
 
@@ -176,6 +197,16 @@ export default function AdminPage() {
           </button>
           <button type="button" onClick={refreshSeats} disabled={!eventId}>
             Оновити місця
+          </button>
+        </div>
+        <div className="grid" style={{ marginTop: "10px" }}>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(e) => setXlsxFile(e.target.files?.[0] ?? null)}
+          />
+          <button type="button" onClick={importXlsx} disabled={!eventId || !xlsxFile}>
+            Import XLSX
           </button>
         </div>
       </section>
