@@ -1,8 +1,9 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    typedRoutes: false,
-  },
+  typedRoutes: false,
+  outputFileTracingRoot: path.join(__dirname, "../.."),
 };
 
 module.exports = nextConfig;
