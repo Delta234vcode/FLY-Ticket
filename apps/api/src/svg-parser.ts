@@ -35,8 +35,20 @@ export function parseSvgSeats(svg: string): ParsedSeat[] {
       const translate = parseTranslate(attrs.transform);
 
       // Many editors export seats as circle/ellipse/rect/use with mixed-case attrs.
-      let xRaw = attrs.cx ?? attrs.CX ?? attrs.x ?? attrs.X;
-      let yRaw = attrs.cy ?? attrs.CY ?? attrs.y ?? attrs.Y;
+      let xRaw =
+        attrs.cx ??
+        attrs.CX ??
+        attrs["sodipodi:cx"] ??
+        attrs["SODIPODI:CX"] ??
+        attrs.x ??
+        attrs.X;
+      let yRaw =
+        attrs.cy ??
+        attrs.CY ??
+        attrs["sodipodi:cy"] ??
+        attrs["SODIPODI:CY"] ??
+        attrs.y ??
+        attrs.Y;
 
       if ((tagName === "rect" || tagName === "use") && xRaw && yRaw) {
         const width = Number(attrs.width ?? attrs.WIDTH ?? "0");
@@ -57,8 +69,10 @@ export function parseSvgSeats(svg: string): ParsedSeat[] {
       const label = attrs["data-seat"] ?? attrs["data-place"] ?? attrs["seat"] ?? `${index + 1}`;
       const sector = attrs["data-sector"] ?? "default";
       const className = (attrs.class ?? attrs.CLASS ?? "").toLowerCase();
+      const radiusHint = Number(attrs.r ?? attrs.R ?? attrs.rx ?? attrs.RX ?? attrs.ry ?? attrs.RY ?? "0");
       const looksLikeSeat =
         ["circle", "ellipse", "rect", "use"].includes(tagName) ||
+        (tagName === "path" && (Boolean(attrs["sodipodi:cx"]) || radiusHint > 0)) ||
         className.includes("seat") ||
         Boolean(attrs["data-seat"] ?? attrs["data-place"] ?? attrs["seat"]);
 
