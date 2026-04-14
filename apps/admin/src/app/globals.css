@@ -106,3 +106,30 @@ svg {
   color: var(--muted);
   font-weight: 600;
 }
+
+.layout-editor {
+  position: relative;
+  width: 1000px;
+  max-width: 100%;
+  margin-top: 12px;
+}
+
+.layout-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.layout-editor svg {
+  position: relative;
+  z-index: 1;
+}
+
+.manual-active {
+  cursor: crosshair;
+}

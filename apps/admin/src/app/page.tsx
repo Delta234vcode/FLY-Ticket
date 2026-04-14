@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { MouseEvent, useMemo, useState } from "react";
 
 type EventResponse = { id: string; title: string };
 
@@ -13,6 +13,8 @@ type Seat = {
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const VIEWBOX_WIDTH = 1000;
+const VIEWBOX_HEIGHT = 520;
 
 export default function AdminPage() {
   const [eventId, setEventId] = useState<string>("");
@@ -21,11 +23,17 @@ export default function AdminPage() {
   const [startsAt, setStartsAt] = useState("2026-04-23T20:00");
   const [svgFile, setSvgFile] = useState<File | null>(null);
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [backgroundUrl, setBackgroundUrl] = useState<string>("");
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [tierName, setTierName] = useState("Standard");
   const [tierColor, setTierColor] = useState("#1f8dff");
   const [price, setPrice] = useState("5000");
+  const [manualMode, setManualMode] = useState(false);
+  const [manualSector, setManualSector] = useState("manual");
+  const [manualRow, setManualRow] = useState("1");
+  const [manualSeatStart, setManualSeatStart] = useState(1);
   const [message, setMessage] = useState("");
 
   function encodeTier(name: string, color: string) {
@@ -184,6 +192,66 @@ export default function AdminPage() {
     );
   }
 
+  function handleBackgroundChange(file: File | null) {
+    setBackgroundFile(file);
+    if (!file) {
+      setBackgroundUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setBackgroundUrl(objectUrl);
+    setMessage("Фон схеми завантажено. Увімкни ручний режим і клікай по місцях.");
+  }
+
+  async function addManualSeat(e: MouseEvent<SVGSVGElement>) {
+    if (!manualMode || !eventId) return;
+
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * VIEWBOX_WIDTH;
+    const y = ((e.clientY - rect.top) / rect.height) * VIEWBOX_HEIGHT;
+
+    const seatLabel = String(manualSeatStart);
+    const response = await fetch(`${API_URL}/admin/events/${eventId}/seats/manual`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sectorCode: manualSector,
+        sectorName: manualSector,
+        rowLabel: manualRow,
+        seatLabel,
+        x,
+        y,
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      setMessage(payload?.error ?? "Не вдалося створити місце");
+      return;
+    }
+
+    setManualSeatStart((prev) => prev + 1);
+    await refreshSeats();
+    setMessage(`Додано місце ${manualRow}-${seatLabel}`);
+  }
+
+  async function deleteSelectedSeats() {
+    if (!eventId || !selectedSeats.length) return;
+    const selected = seats.filter((seat) => selectedSeats.includes(seat.externalId));
+
+    for (const seat of selected) {
+      await fetch(`${API_URL}/admin/events/${eventId}/seats/${seat.id}`, {
+        method: "DELETE",
+      });
+    }
+
+    setSelectedSeats([]);
+    await refreshSeats();
+    setMessage("Вибрані місця видалено");
+  }
+
   return (
     <main>
       <h1 className="title">Ticket Operator Admin MVP</h1>
@@ -206,7 +274,7 @@ export default function AdminPage() {
       </section>
 
       <section className="card">
-        <h2>2. Завантажити SVG схему</h2>
+        <h2>2. Імпорт або фон схеми</h2>
         <div className="grid">
           <input
             type="file"
@@ -214,7 +282,7 @@ export default function AdminPage() {
             onChange={(e) => setSvgFile(e.target.files?.[0] ?? null)}
           />
           <button type="button" onClick={uploadSvg} disabled={!eventId || !svgFile}>
-            Upload + Import
+            Upload + Import SVG
           </button>
           <button type="button" onClick={refreshSeats} disabled={!eventId}>
             Оновити місця
@@ -230,10 +298,23 @@ export default function AdminPage() {
             Import XLSX
           </button>
         </div>
+        <div className="grid" style={{ marginTop: "10px" }}>
+          <input
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,.svg"
+            onChange={(e) => handleBackgroundChange(e.target.files?.[0] ?? null)}
+          />
+          <button type="button" onClick={() => setManualMode((v) => !v)} disabled={!eventId || !backgroundFile}>
+            {manualMode ? "Вимкнути ручний режим" : "Увімкнути ручний режим"}
+          </button>
+          <button type="button" onClick={deleteSelectedSeats} disabled={!selectedSeats.length || !eventId}>
+            Видалити вибрані місця
+          </button>
+        </div>
       </section>
 
       <section className="card">
-        <h2>3. Розцінка місць</h2>
+        <h2>3. Розцінка і ручне розміщення</h2>
         <div className="grid">
           <input value={tierName} onChange={(e) => setTierName(e.target.value)} placeholder="Тариф" />
           <input
@@ -248,30 +329,55 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <svg width="1000" height="520" viewBox="0 0 1000 520">
-          {seats.map((seat) => {
-            const selected = selectedSeats.includes(seat.externalId);
-            const pricedColor = pricedColors.get(seat.externalId);
-            const cssClass = `seat ${selected ? "selected" : ""} ${pricedColor ? "priced" : ""}`;
-            const priceHint = seat.seatPrices.length
-              ? `${seat.seatPrices[0].amount} ${seat.seatPrices[0].currency}`
-              : "Без ціни";
+        <div className="grid" style={{ marginTop: "10px" }}>
+          <input value={manualSector} onChange={(e) => setManualSector(e.target.value)} placeholder="Сектор" />
+          <input value={manualRow} onChange={(e) => setManualRow(e.target.value)} placeholder="Ряд" />
+          <input
+            value={manualSeatStart}
+            onChange={(e) => setManualSeatStart(Number(e.target.value) || 1)}
+            type="number"
+            min={1}
+            placeholder="Старт № місця"
+          />
+          <input value={manualMode ? "ON" : "OFF"} readOnly />
+        </div>
 
-            return (
-              <circle
-                key={seat.id}
-                className={cssClass}
-                cx={seat.x}
-                cy={seat.y}
-                r={6}
-                style={pricedColor ? { fill: pricedColor } : undefined}
-                onClick={() => toggleSeat(seat.externalId)}
-              >
-                <title>{`${seat.externalId} | ${priceHint}`}</title>
-              </circle>
-            );
-          })}
-        </svg>
+        <div className="layout-editor">
+          {backgroundUrl && <img src={backgroundUrl} alt="Layout background" className="layout-background" />}
+          <svg
+            width="1000"
+            height="520"
+            viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+            className={manualMode ? "manual-active" : ""}
+            onClick={addManualSeat}
+          >
+            {seats.map((seat) => {
+              const selected = selectedSeats.includes(seat.externalId);
+              const pricedColor = pricedColors.get(seat.externalId);
+              const cssClass = `seat ${selected ? "selected" : ""} ${pricedColor ? "priced" : ""}`;
+              const priceHint = seat.seatPrices.length
+                ? `${seat.seatPrices[0].amount} ${seat.seatPrices[0].currency}`
+                : "Без ціни";
+
+              return (
+                <circle
+                  key={seat.id}
+                  className={cssClass}
+                  cx={seat.x}
+                  cy={seat.y}
+                  r={6}
+                  style={pricedColor ? { fill: pricedColor } : undefined}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    toggleSeat(seat.externalId);
+                  }}
+                >
+                  <title>{`${seat.externalId} | ${priceHint}`}</title>
+                </circle>
+              );
+            })}
+          </svg>
+        </div>
       </section>
 
       {message && <p className="status">{message}</p>}

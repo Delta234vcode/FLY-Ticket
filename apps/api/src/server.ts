@@ -299,6 +299,77 @@ app.post("/admin/events/:id/seats/import-from-xlsx", uploadXlsx.single("sheet"),
   return res.json({ imported: parsedSeats.length });
 });
 
+const manualSeatPayload = z.object({
+  sectorCode: z.string().min(1).default("manual"),
+  sectorName: z.string().optional(),
+  rowLabel: z.string().min(1).default("1"),
+  seatLabel: z.string().min(1),
+  x: z.number(),
+  y: z.number(),
+});
+
+app.post("/admin/events/:id/seats/manual", async (req, res) => {
+  const eventId = req.params.id;
+  const parsed = manualSeatPayload.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) {
+    return res.status(404).json({ error: "Event not found" });
+  }
+
+  const input = parsed.data;
+  const sector = await prisma.sector.upsert({
+    where: {
+      eventId_code: {
+        eventId,
+        code: input.sectorCode,
+      },
+    },
+    update: {
+      name: input.sectorName ?? input.sectorCode,
+    },
+    create: {
+      eventId,
+      code: input.sectorCode,
+      name: input.sectorName ?? input.sectorCode,
+    },
+  });
+
+  const externalId = `${input.sectorCode}:${input.rowLabel}:${input.seatLabel}`;
+  const created = await prisma.seat.create({
+    data: {
+      eventId,
+      sectorId: sector.id,
+      seatLabel: input.seatLabel,
+      rowLabel: input.rowLabel,
+      externalId,
+      x: input.x,
+      y: input.y,
+    },
+  });
+
+  return res.status(201).json(created);
+});
+
+app.delete("/admin/events/:id/seats/:seatId", async (req, res) => {
+  const eventId = req.params.id;
+  const seatId = req.params.seatId;
+
+  const seat = await prisma.seat.findFirst({
+    where: { id: seatId, eventId },
+  });
+  if (!seat) {
+    return res.status(404).json({ error: "Seat not found" });
+  }
+
+  await prisma.seatPrice.deleteMany({ where: { seatId } });
+  await prisma.seat.delete({ where: { id: seatId } });
+  return res.json({ ok: true });
+});
+
 const pricingPayload = z.object({
   updates: z.array(seatPricingSchema).min(1),
   actorEmail: z.string().email().optional().default("admin@local"),
