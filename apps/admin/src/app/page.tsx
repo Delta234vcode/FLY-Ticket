@@ -1,6 +1,6 @@
 "use client";
 
-import { MouseEvent, useMemo, useState } from "react";
+import { MouseEvent, useMemo, useState, useEffect } from "react";
 
 type EventResponse = { id: string; title: string };
 
@@ -204,6 +204,14 @@ export default function AdminPage() {
     setMessage("Фон схеми завантажено. Увімкни ручний режим і клікай по місцях.");
   }
 
+  useEffect(() => {
+    return () => {
+      if (backgroundUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(backgroundUrl);
+      }
+    };
+  }, [backgroundUrl]);
+
   async function addManualSeat(e: MouseEvent<SVGSVGElement>) {
     if (!manualMode || !eventId) return;
 
@@ -348,7 +356,7 @@ export default function AdminPage() {
             width="1000"
             height="520"
             viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-            className={manualMode ? "manual-active" : ""}
+            className={`${manualMode ? "manual-active" : ""} ${backgroundUrl ? "with-background" : ""}`.trim()}
             onClick={addManualSeat}
           >
             {seats.map((seat) => {
