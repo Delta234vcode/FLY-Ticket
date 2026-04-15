@@ -101,6 +101,11 @@ svg {
   fill: #19b0ff;
 }
 
+.seat.saving {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .status {
   margin-top: 8px;
   color: var(--muted);

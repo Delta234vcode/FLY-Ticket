@@ -101,6 +101,7 @@ export default function AdminPage() {
 
   async function uploadSvg() {
     if (!eventId || !svgFile) return;
+    const editorWindow = window.open("", "_blank", "noopener,noreferrer");
     const form = new FormData();
     form.append("layout", svgFile);
 
@@ -112,6 +113,7 @@ export default function AdminPage() {
     if (!uploadResponse.ok) {
       const payload = await uploadResponse.json().catch(() => null);
       setMessage(payload?.error ?? "Помилка завантаження SVG");
+      editorWindow?.close();
       return;
     }
 
@@ -122,11 +124,18 @@ export default function AdminPage() {
     if (!importResponse.ok) {
       const payload = await importResponse.json().catch(() => null);
       setMessage(payload?.error ?? "Помилка імпорту місць з SVG");
+      editorWindow?.close();
       return;
     }
 
     await refreshSeats();
-    setMessage("SVG імпортовано");
+    const editorUrl = `/pricing-editor?eventId=${encodeURIComponent(eventId)}`;
+    if (editorWindow) {
+      editorWindow.location.href = editorUrl;
+    } else {
+      window.open(editorUrl, "_blank", "noopener,noreferrer");
+    }
+    setMessage("SVG імпортовано. Відкрито вікно для швидкої розцінки.");
   }
 
   async function refreshSeats() {
