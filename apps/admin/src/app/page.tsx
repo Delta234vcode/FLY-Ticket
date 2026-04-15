@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [manualRow, setManualRow] = useState("1");
   const [manualSeatStart, setManualSeatStart] = useState(1);
   const [message, setMessage] = useState("");
+  const [savingSeatExternalIds, setSavingSeatExternalIds] = useState<string[]>([]);
 
   function encodeTier(name: string, color: string) {
     return `${name}__${color.toLowerCase()}`;
@@ -193,6 +194,52 @@ export default function AdminPage() {
     setSelectedSeats([]);
     await refreshSeats();
     setMessage("Ціну збережено");
+  }
+
+  async function applyPricingToSeat(externalId: string) {
+    if (!eventId) return;
+    const amount = Number(price);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setMessage("Вкажіть коректну ціну більше 0");
+      return;
+    }
+
+    setSavingSeatExternalIds((prev) => (prev.includes(externalId) ? prev : [...prev, externalId]));
+    const tier = encodeTier(tierName, tierColor);
+    const response = await fetch(`${API_URL}/admin/events/${eventId}/seats/pricing`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        actorEmail: "admin@local",
+        updates: [
+          {
+            seatIds: [externalId],
+            amount,
+            currency: "AMD",
+            tierName: tier,
+          },
+        ],
+      }),
+    });
+
+    setSavingSeatExternalIds((prev) => prev.filter((id) => id !== externalId));
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      setMessage(payload?.error ?? "Не вдалося зберегти ціну місця");
+      return;
+    }
+
+    setSeats((prev) =>
+      prev.map((seat) =>
+        seat.externalId === externalId
+          ? {
+              ...seat,
+              seatPrices: [{ amount: String(amount), currency: "AMD", priceTier: { name: tier } }],
+            }
+          : seat,
+      ),
+    );
+    setMessage(`Ціну ${amount} AMD застосовано до ${externalId}`);
   }
 
   function toggleSeat(externalId: string) {
@@ -379,13 +426,17 @@ export default function AdminPage() {
               return (
                 <circle
                   key={seat.id}
-                  className={cssClass}
+                  className={`${cssClass} ${savingSeatExternalIds.includes(seat.externalId) ? "saving" : ""}`}
                   cx={seat.x}
                   cy={seat.y}
                   r={6}
                   style={pricedColor ? { fill: pricedColor } : undefined}
                   onClick={(ev) => {
                     ev.stopPropagation();
+                    if (manualMode) {
+                      void applyPricingToSeat(seat.externalId);
+                      return;
+                    }
                     toggleSeat(seat.externalId);
                   }}
                 >
