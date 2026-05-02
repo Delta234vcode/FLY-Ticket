@@ -1,0 +1,475 @@
+/* =========================================================
+   Chaika Tickets — Pretix custom theme
+   Paste into:  Organizer (or Event) → Settings → Customize → Custom CSS
+   Brand: light-blue / white, modern, soft 3D feel
+   ========================================================= */
+
+:root {
+  --chaika-50:  #F0F8FF;
+  --chaika-100: #DCEEFE;
+  --chaika-200: #B3DDF5;
+  --chaika-300: #7CC3EE;
+  --chaika-400: #4FB3F0;
+  --chaika-500: #28A0E8;
+  --chaika-600: #1E7FBF;
+  --chaika-700: #175F90;
+  --chaika-800: #0F4068;
+  --chaika-900: #0B2A4A;
+
+  --chaika-gradient: linear-gradient(135deg, #4FB3F0 0%, #28A0E8 50%, #1E7FBF 100%);
+  --chaika-shadow:   0 18px 40px -18px rgba(11,42,74,0.35);
+  --chaika-glow:     0 0 60px -10px rgba(40,160,232,0.55);
+  --chaika-radius:   18px;
+
+  --font-display: "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Premium fonts (Pretix loads them via Custom CSS @import) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap");
+
+/* ---------- Page background ---------- */
+html, body {
+  font-family: var(--font-body);
+  color: var(--chaika-900);
+  background-color: #F6FAFD !important;
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, rgba(79,179,240,0.18), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(40,160,232,0.14), transparent 60%),
+    radial-gradient(800px 600px at 50% 110%, rgba(124,195,238,0.18), transparent 60%) !important;
+  background-attachment: fixed !important;
+}
+
+/* Subtle grid mesh */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(40,160,232,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(40,160,232,0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+          mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+body > * { position: relative; z-index: 1; }
+
+/* Center container for the organizer page */
+main, .container, .page-content {
+  max-width: 1100px;
+}
+
+/* ---------- Typography ---------- */
+h1, h2, h3, h4, .page-header h1 {
+  font-family: var(--font-display) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  color: var(--chaika-900);
+}
+
+a { color: var(--chaika-600); }
+a:hover, a:focus { color: var(--chaika-700); text-decoration: none; }
+
+/* ---------- Top header / brand ---------- */
+header,
+.organizer-name,
+.page-header,
+.navbar,
+.navbar-default {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.organizer-name h1,
+.page-header h1,
+.navbar-brand,
+header h1 {
+  background: var(--chaika-gradient);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent !important;
+  font-size: 2.4rem !important;
+}
+
+/* Inject a chaika seagull badge before the brand title */
+.page-header h1::before,
+.organizer-name h1::before,
+header h1::before {
+  content: "";
+  display: inline-block;
+  width: 38px;
+  height: 38px;
+  margin-right: 14px;
+  vertical-align: -8px;
+  border-radius: 12px;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='white' d='M4 38c10-3 17-9 23-18 1.5-2 3.5-2 5 0 6 9 13 15 23 18-7 4-15 6-23 6S11 42 4 38Z'/></svg>") center/24px no-repeat,
+    var(--chaika-gradient);
+  box-shadow: var(--chaika-glow);
+}
+
+/* ---------- View tabs (Список / Неделя / Месяц / День / iCal) ---------- */
+.nav-tabs,
+.nav-pills,
+ul.nav,
+.btn-group {
+  border: 0 !important;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: inline-flex !important;
+  padding: 6px;
+  border-radius: 999px;
+  gap: 4px;
+  box-shadow: var(--chaika-shadow);
+}
+
+.nav-tabs > li,
+.nav-pills > li,
+.btn-group > .btn,
+.btn-group > a {
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.nav-tabs > li > a,
+.nav-pills > li > a,
+.btn-group > .btn,
+.btn-group > a {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--chaika-700) !important;
+  border-radius: 999px !important;
+  padding: 8px 18px !important;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all .25s cubic-bezier(0.16,1,0.3,1);
+}
+
+.nav-tabs > li > a:hover,
+.nav-pills > li > a:hover,
+.btn-group > .btn:hover {
+  color: var(--chaika-900) !important;
+  background: rgba(40,160,232,0.08) !important;
+}
+
+.nav-tabs > li.active > a,
+.nav-pills > li.active > a,
+.btn-group > .btn.active,
+.btn-group > .active {
+  background: var(--chaika-gradient) !important;
+  color: #fff !important;
+  box-shadow: var(--chaika-glow);
+  transform: translateY(-1px);
+}
+
+/* ---------- Cards / panels ---------- */
+.panel,
+.well,
+.event-list,
+.list-group,
+.event-info,
+section {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  border-radius: var(--chaika-radius) !important;
+  box-shadow: var(--chaika-shadow);
+}
+
+.panel-heading,
+.list-group-item-heading,
+.well > h2,
+.well > h3 {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--chaika-900) !important;
+  font-weight: 700;
+}
+
+/* ---------- Event list items (modern 3D cards) ---------- */
+.event-list .event,
+.list-group-item,
+.event-list-event,
+li.list-group-item {
+  position: relative;
+  display: block;
+  background: #fff !important;
+  border: 1px solid rgba(40,160,232,0.12) !important;
+  border-radius: 16px !important;
+  padding: 18px 22px !important;
+  margin-bottom: 12px !important;
+  transition: transform .35s cubic-bezier(0.16,1,0.3,1),
+              box-shadow .35s cubic-bezier(0.16,1,0.3,1),
+              border-color .25s ease;
+  box-shadow: 0 8px 24px -16px rgba(11,42,74,0.35);
+  overflow: hidden;
+}
+.event-list .event:hover,
+.list-group-item:hover,
+.event-list-event:hover {
+  transform: translateY(-3px) rotateX(2deg);
+  border-color: var(--chaika-300) !important;
+  box-shadow: 0 28px 50px -22px rgba(11,42,74,0.45),
+              0 14px 24px -16px rgba(40,160,232,0.5);
+}
+
+/* Left accent on each event card */
+.event-list .event::before,
+.list-group-item::before,
+.event-list-event::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 14%;
+  height: 72%;
+  width: 4px;
+  border-radius: 0 6px 6px 0;
+  background: var(--chaika-gradient);
+  opacity: 0.85;
+}
+
+/* Subtle seagull silhouette on each card */
+.event-list .event::after,
+.list-group-item::after,
+.event-list-event::after {
+  content: "";
+  position: absolute;
+  right: -8px; top: 50%;
+  width: 110px; height: 36px;
+  transform: translateY(-50%);
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'><path fill='%234FB3F0' opacity='0.18' d='M2 28c14-3 22-15 28-21 1-1 2-1 3 0 6 6 14 18 28 21-10 4-18 6-29 6S12 32 2 28Z'/></svg>") no-repeat center / contain;
+  pointer-events: none;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary,
+button.primary,
+input[type="submit"].btn-primary {
+  background: var(--chaika-gradient) !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 10px 22px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  box-shadow: var(--chaika-glow);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 0 80px -10px rgba(40,160,232,0.75);
+}
+
+.btn-default,
+.btn:not(.btn-primary):not(.btn-link) {
+  background: #fff !important;
+  border: 1px solid var(--chaika-200) !important;
+  border-radius: 999px !important;
+  color: var(--chaika-700) !important;
+  font-weight: 600;
+  transition: all .25s ease;
+}
+.btn-default:hover {
+  border-color: var(--chaika-400) !important;
+  color: var(--chaika-800) !important;
+  transform: translateY(-1px);
+}
+
+/* iCal button — tiny calendar pill */
+a[href*="ical"], a[href*=".ics"] {
+  background: #fff !important;
+  border: 1px solid var(--chaika-200) !important;
+  color: var(--chaika-700) !important;
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+/* ---------- Calendar grid (Month / Week views) ---------- */
+.calendar,
+table.calendar,
+.calendar-table {
+  border-collapse: separate;
+  border-spacing: 4px;
+  background: transparent !important;
+  border: 0 !important;
+}
+.calendar th {
+  background: transparent !important;
+  color: var(--chaika-500) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 0 !important;
+  border: 0 !important;
+}
+.calendar td,
+.calendar-cell {
+  background: rgba(255,255,255,0.7) !important;
+  border: 1px solid rgba(40,160,232,0.08) !important;
+  border-radius: 12px !important;
+  vertical-align: top;
+  padding: 8px !important;
+  min-height: 88px;
+  transition: all .2s ease;
+}
+.calendar td:hover {
+  border-color: var(--chaika-300) !important;
+  background: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -10px rgba(11,42,74,0.25);
+}
+.calendar td.today,
+.calendar-cell.today {
+  border-color: var(--chaika-400) !important;
+  box-shadow: inset 0 0 0 2px var(--chaika-400);
+}
+.calendar td a,
+.calendar-cell a {
+  display: block;
+  background: var(--chaika-gradient);
+  color: #fff !important;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.calendar td a:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+/* ---------- Language switcher ---------- */
+.locales,
+.language-switch,
+form[action*="setlang"] {
+  display: inline-flex;
+  gap: 6px;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(14px);
+  border-radius: 999px;
+  padding: 5px;
+  box-shadow: var(--chaika-shadow);
+}
+.locales a,
+.language-switch a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--chaika-700) !important;
+  transition: all .2s ease;
+}
+.locales a:hover {
+  background: rgba(40,160,232,0.08);
+  color: var(--chaika-900) !important;
+}
+.locales a.active,
+.locales .active a,
+.language-switch a.active {
+  background: var(--chaika-gradient);
+  color: #fff !important;
+  box-shadow: var(--chaika-glow);
+}
+
+/* ---------- Footer ---------- */
+footer,
+.footer,
+.page-footer {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--chaika-700) !important;
+  font-size: 12px !important;
+  text-align: center;
+  padding: 30px 16px !important;
+}
+footer a { color: var(--chaika-700) !important; }
+
+/* Hide noisy "powered by" and "based on pretix" lines */
+footer .powered-by,
+.poweredby,
+.based-on,
+footer small,
+footer .text-muted {
+  opacity: 0.45;
+  font-size: 11px;
+}
+
+/* ---------- Forms ---------- */
+input[type="text"],
+input[type="email"],
+input[type="search"],
+input[type="number"],
+input[type="password"],
+select,
+textarea,
+.form-control {
+  border: 1px solid var(--chaika-200) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  background: #fff !important;
+  color: var(--chaika-900) !important;
+  box-shadow: none !important;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+input:focus,
+.form-control:focus {
+  border-color: var(--chaika-500) !important;
+  box-shadow: 0 0 0 4px rgba(40,160,232,0.15) !important;
+  outline: 0 !important;
+}
+
+/* ---------- Alerts / messages ---------- */
+.alert {
+  border: 0 !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  background: #fff !important;
+  box-shadow: var(--chaika-shadow);
+}
+.alert-info    { border-left: 4px solid var(--chaika-500) !important; }
+.alert-success { border-left: 4px solid #1aab6f !important; }
+.alert-warning { border-left: 4px solid #f5a524 !important; }
+.alert-danger  { border-left: 4px solid #ef4444 !important; }
+
+/* ---------- Hide noisy stock text (optional) ---------- */
+/* "Предстоящие публичные мероприятия не найдены" still appears,
+   but its container becomes a calm empty-state card. */
+.no-events-message,
+.event-list .empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--chaika-700);
+  font-style: italic;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .organizer-name h1,
+  .page-header h1 {
+    font-size: 1.7rem !important;
+  }
+  .nav-tabs, .nav-pills, .btn-group {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+  }
+  .event-list .event::after,
+  .list-group-item::after { display: none; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}
